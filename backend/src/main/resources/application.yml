@@ -1,0 +1,31 @@
+# backend/src/main/resources/application.yml
+spring:
+  application:
+    name: interview-copilot-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/interview_copilot}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/interview_copilot}
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:changeme_use_strong_secret_in_prod}
+  expiration: 86400000
+  refresh-expiration: 604800000
