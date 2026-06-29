@@ -1,31 +1,52 @@
-# backend/src/main/resources/application.yml
 spring:
   application:
     name: interview-copilot-backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/interview_copilot}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://localhost:5432/interview_copilot?TimeZone=UTC
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        jdbc:
+          time_zone: UTC
 
   data:
     mongodb:
-      uri: ${MONGO_URI:mongodb://localhost:27017/interview_copilot}
+      uri: mongodb://localhost:27017/interview_copilot
+
+  redis:
+    host: localhost
+    port: 6379
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
 server:
-  port: 8080
+  port: 8082
 
 jwt:
-  secret: ${JWT_SECRET:changeme_use_strong_secret_in_prod}
+  secret: interviewcopilot_super_secret_key_minimum_32chars
   expiration: 86400000
   refresh-expiration: 604800000
+
+app:
+  oauth2:
+    redirect-uri: http://localhost:5173/oauth2/callback
