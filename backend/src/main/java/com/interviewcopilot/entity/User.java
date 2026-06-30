@@ -1,4 +1,3 @@
-// backend/src/main/java/com/interviewcopilot/entity/User.java
 package com.interviewcopilot.entity;
 
 import jakarta.persistence.*;
@@ -39,7 +38,7 @@ public class User {
     private String profilePicture;
 
     @Column
-    private String provider; // local, google
+    private String provider;
 
     @Column
     private String providerId;

@@ -1,4 +1,3 @@
-// backend/src/main/java/com/interviewcopilot/dto/AuthResponse.java
 package com.interviewcopilot.dto;
 
 import lombok.AllArgsConstructor;

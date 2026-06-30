@@ -1,0 +1,28 @@
+# Environment files — NEVER commit
+.env
+.env.local
+**/.env
+
+# Java
+**/target/
+**/*.class
+
+# Node
+**/node_modules/
+**/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Docker volumes
+docker/volumes/
+
+# Logs
+**/*.log
+**/logs/
+
+# OS
+.DS_Store
+Thumbs.db

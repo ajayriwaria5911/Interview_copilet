@@ -1,4 +1,3 @@
-// backend/src/main/java/com/interviewcopilot/dto/LoginRequest.java
 package com.interviewcopilot.dto;
 
 import jakarta.validation.constraints.Email;

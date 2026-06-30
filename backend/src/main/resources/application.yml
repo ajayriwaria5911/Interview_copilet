@@ -3,9 +3,9 @@ spring:
     name: interview-copilot-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/interview_copilot?TimeZone=UTC
-    username: postgres
-    password: postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/interview_copilot?TimeZone=UTC}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -21,7 +21,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/interview_copilot
+      uri: ${MONGO_URI:mongodb://localhost:27017/interview_copilot}
 
   redis:
     host: localhost
@@ -32,8 +32,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
-            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
@@ -43,7 +43,7 @@ server:
   port: 8082
 
 jwt:
-  secret: interviewcopilot_super_secret_key_minimum_32chars
+  secret: ${JWT_SECRET:interviewcopilot_super_secret_key_minimum_32chars}
   expiration: 86400000
   refresh-expiration: 604800000
 

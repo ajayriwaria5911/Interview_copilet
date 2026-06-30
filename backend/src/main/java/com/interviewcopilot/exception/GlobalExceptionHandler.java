@@ -1,4 +1,3 @@
-// backend/src/main/java/com/interviewcopilot/exception/GlobalExceptionHandler.java
 package com.interviewcopilot.exception;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +21,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(
             MethodArgumentNotValidException ex) {
-
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String field = ((FieldError) error).getField();
             fieldErrors.put(field, error.getDefaultMessage());
         });
-
         return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed", fieldErrors);
     }
 
@@ -65,7 +62,6 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<Map<String, Object>> buildResponse(
             HttpStatus status, String message, Object errors) {
-
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());

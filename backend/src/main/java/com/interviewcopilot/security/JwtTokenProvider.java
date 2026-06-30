@@ -1,4 +1,3 @@
-// backend/src/main/java/com/interviewcopilot/security/JwtTokenProvider.java
 package com.interviewcopilot.security;
 
 import io.jsonwebtoken.*;

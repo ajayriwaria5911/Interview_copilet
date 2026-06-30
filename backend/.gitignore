@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+# Environment variables — NEVER commit these
+.env
+
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+logs/
