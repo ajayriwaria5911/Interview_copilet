@@ -1,23 +1,11 @@
 // frontend/src/App.tsx
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ResumeDashboard from "./pages/ResumeDashboard";
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
-
-// Placeholder — replaced on Day 7
-function Dashboard() {
-  return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Welcome to InterviewCopilot AI
-        </h1>
-        <p className="text-slate-400">Dashboard coming on Day 7 🚀</p>
-      </div>
-    </div>
-  );
-}
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function Unauthorized() {
   return (
@@ -36,7 +24,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -45,7 +32,7 @@ export default function App() {
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ResumeDashboard />} />
         </Route>
 
         {/* Admin only */}
@@ -58,7 +45,6 @@ export default function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
-
       </Routes>
     </BrowserRouter>
   );
