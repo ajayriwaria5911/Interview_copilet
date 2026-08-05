@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "interviews")
@@ -38,7 +39,13 @@ public class Interview {
     private String topic;
 
     @Column
-    private String mongoSessionId; // Reference to MongoDB session
+    private String jobRole;
+
+    @Column
+    private String experienceLevel;
+
+    @Column
+    private String mongoSessionId;
 
     @Column
     private Double overallScore;
@@ -47,7 +54,29 @@ public class Interview {
     private Integer durationMinutes;
 
     @Column
+    private Integer totalQuestions;
+
+    @Column
+    private Integer answeredQuestions;
+
+    @OneToMany(mappedBy = "interview",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Question> questions;
+
+    @OneToMany(mappedBy = "interview",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Feedback> feedbacks;
+
+    @Column
     private LocalDateTime scheduledAt;
+
+    @Column
+    private LocalDateTime startedAt;
+
+    @Column
+    private LocalDateTime completedAt;
 
     @CreationTimestamp
     @Column(updatable = false)

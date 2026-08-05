@@ -1,10 +1,23 @@
+# ============================================
+# InterviewCopilot AI — Root .gitignore
+# ============================================
+
+# ---- Java / Maven ----
 HELP.md
 target/
-.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
 !**/src/main/**/target/
 !**/src/test/**/target/
+.mvn/wrapper/maven-wrapper.jar
 
-### STS ###
+# ---- Spring Boot ----
+**/application-local.yml
+application-local.yml
+
+# ---- IDE — STS ----
 .apt_generated
 .classpath
 .factorypath
@@ -13,13 +26,13 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+# ---- IDE — IntelliJ ----
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# ---- IDE — NetBeans ----
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -29,20 +42,53 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# ---- IDE — VS Code ----
 .vscode/
-# Environment variables — NEVER commit these
+
+# ---- Environment files — NEVER commit ----
 .env
+.env.local
+**/.env
+**/.env.local
 
-# Maven
-target/
-*.class
+# ---- Startup scripts — NEVER commit ----
+**/start.ps1
+**/start.sh
+start.ps1
+start.sh
 
-# IDE
-.idea/
-*.iml
-.vscode/
+# ---- Node / Frontend ----
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
 
-# Logs
+# ---- Python / AI Service ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ---- Logs ----
 *.log
 logs/
+**/logs/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Docker volumes ----
+docker/volumes/
+
+# ---- Upload files ----
+uploads/
+**/uploads/
