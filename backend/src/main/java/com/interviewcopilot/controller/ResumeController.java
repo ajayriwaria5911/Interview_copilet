@@ -154,6 +154,30 @@ public class ResumeController {
                         .skills(skills)
                         .build());
     }
+    @GetMapping("/{id}/download")
+public ResponseEntity<byte[]> downloadResume(
+        @PathVariable Long id,
+        Authentication authentication) {
+
+    String email = authentication.getName();
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalStateException("User not found"));
+
+    Resume resume = resumeRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+
+    if (!resume.getUser().getId().equals(user.getId())) {
+        throw new IllegalStateException("Access denied");
+    }
+
+    byte[] fileBytes = fileStorageService.loadFile(resume.getStoragePath());
+
+    return ResponseEntity.ok()
+            .header("Content-Type", "application/pdf")
+            .header("Content-Disposition",
+                    "inline; filename=\"" + resume.getFileName() + "\"")
+            .body(fileBytes);
+}
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteResume(

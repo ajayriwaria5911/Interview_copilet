@@ -3,6 +3,7 @@
 import { FileText, Trash2, Eye, CheckCircle, Clock, XCircle, Loader2 } from "lucide-react";
 import type { Resume } from "../../types/resume.types";
 import { useResumeStore } from "../../store/resumeStore";
+import { useAuthStore } from "../../store/authStore";
 
 interface Props {
   resume: Resume;
@@ -10,6 +11,7 @@ interface Props {
 
 export default function ResumeCard({ resume }: Props) {
   const { deleteResume, selectResume, selectedResume } = useResumeStore();
+  const { accessToken } = useAuthStore();
   const isSelected = selectedResume?.id === resume.id;
 
   const statusIcon = {
@@ -32,6 +34,30 @@ export default function ResumeCard({ resume }: Props) {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleView = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(
+        `http://localhost:8082/api/resumes/${resume.id}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch resume");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch {
+      alert("Could not open resume. Please try again.");
+    }
   };
 
   return (
@@ -91,10 +117,7 @@ export default function ResumeCard({ resume }: Props) {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              selectResume(resume);
-            }}
+            onClick={handleView}
             className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
           >
             <Eye className="w-3.5 h-3.5" />
