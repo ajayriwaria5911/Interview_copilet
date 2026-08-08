@@ -2,6 +2,7 @@ package com.interviewcopilot.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,24 +65,26 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token);
-            return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT token expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("Unsupported JWT token: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("Malformed JWT token: {}", e.getMessage());
-        } catch (SecurityException e) {
-            log.warn("Invalid JWT signature: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT claims string is empty: {}", e.getMessage());
-        }
-        return false;
+   public boolean validateToken(String token) {
+    try {
+        Jwts.parser()
+            .verifyWith(secretKey)
+            .build()
+            .parseSignedClaims(token);
+        return true;
+    } catch (ExpiredJwtException e) {
+        log.warn("JWT token expired: {}", e.getMessage());
+    } catch (UnsupportedJwtException e) {
+        log.warn("Unsupported JWT token: {}", e.getMessage());
+    } catch (MalformedJwtException e) {
+        log.warn("Malformed JWT token: {}", e.getMessage());
+    } catch (SecurityException e) {
+        log.warn("Invalid JWT signature: {}", e.getMessage());
+    } catch (IllegalArgumentException e) {
+        log.warn("JWT claims string is empty: {}", e.getMessage());
+    } catch (Exception e) {
+        log.warn("JWT validation error: {}", e.getMessage());
     }
+    return false;
+}
 }

@@ -1,13 +1,16 @@
 // backend/src/main/java/com/interviewcopilot/config/SecurityConfig.java
 package com.interviewcopilot.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewcopilot.security.JwtAuthenticationFilter;
 import com.interviewcopilot.security.CustomUserDetailsService;
 import com.interviewcopilot.security.OAuth2SuccessHandler;
 import com.interviewcopilot.service.CustomOAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,6 +22,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -26,6 +30,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -41,6 +46,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
             "/api/health",
+            "/error",            // Spring internal error forwarding
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/login/oauth2/**",
@@ -54,6 +60,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Return 401 JSON instead of redirecting to Google when JWT is missing/invalid
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated())
@@ -66,6 +75,25 @@ public class SecurityConfig {
                 .successHandler(oAuth2SuccessHandler));
 
         return http.build();
+    }
+
+    /**
+     * Returns a clean 401 JSON error for REST API clients (Bruno, Postman, frontend)
+     * instead of redirecting to the Google OAuth login page.
+     */
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            Map<String, Object> body = Map.of(
+                "status", 401,
+                "error", "Unauthorized",
+                "message", "Missing or invalid JWT token. Please login first.",
+                "path", request.getRequestURI()
+            );
+            new ObjectMapper().writeValue(response.getOutputStream(), body);
+        };
     }
 
     @Bean
@@ -89,13 +117,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000"
-        ));
+
+        // Allows all origins (browser, Bruno, Postman, etc.)
+        // For production: replace "*" with your exact frontend domain
+        config.setAllowedOriginPatterns(List.of("*"));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Origin"
+        ));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L); // Cache preflight for 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
