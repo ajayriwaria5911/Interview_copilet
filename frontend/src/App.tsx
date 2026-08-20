@@ -5,6 +5,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResumeDashboard from "./pages/ResumeDashboard";
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
+import InterviewPage from "./pages/InterviewPage";
+import NewInterviewPage from "./pages/NewInterviewPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function Unauthorized() {
@@ -33,6 +35,9 @@ export default function App() {
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<ResumeDashboard />} />
+          {/* ✅ /interview/new MUST be before /interview/:interviewId */}
+          <Route path="/interview/new" element={<NewInterviewPage />} />
+          <Route path="/interview/:interviewId" element={<InterviewPage />} />
         </Route>
 
         {/* Admin only */}
