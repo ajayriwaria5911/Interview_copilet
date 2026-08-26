@@ -7,6 +7,8 @@ import ResumeDashboard from "./pages/ResumeDashboard";
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
 import InterviewPage from "./pages/InterviewPage";
 import NewInterviewPage from "./pages/NewInterviewPage";
+import HistoryPage from "./pages/HistoryPage";
+import InterviewDetailPage from "./pages/InterviewDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function Unauthorized() {
@@ -35,12 +37,13 @@ export default function App() {
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<ResumeDashboard />} />
-          {/* ✅ /interview/new MUST be before /interview/:interviewId */}
           <Route path="/interview/new" element={<NewInterviewPage />} />
           <Route path="/interview/:interviewId" element={<InterviewPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/history/:id" element={<InterviewDetailPage />} />
         </Route>
 
-        {/* Admin only */}
+        {/* Admin */}
         <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
           <Route
             path="/admin"

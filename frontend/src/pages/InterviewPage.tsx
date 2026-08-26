@@ -117,7 +117,7 @@ export default function InterviewPage() {
     }
   }, []);
 
-  // ── Face detection — counts distinct face regions ─────────────────
+  // ── Face detection ────────────────────────────────────────────────
   const countFaces = useCallback((): number => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -131,7 +131,6 @@ export default function InterviewPage() {
     ctx.drawImage(video, 0, 0, W, H);
     const { data } = ctx.getImageData(0, 0, W, H);
 
-    // Build 20x15 grid of skin-colored cells
     const GRID_W = 20;
     const GRID_H = 15;
     const cellW = W / GRID_W;
@@ -153,7 +152,6 @@ export default function InterviewPage() {
             const i = (y * W + x) * 4;
             const r = data[i], g = data[i + 1], b = data[i + 2];
 
-            // YCbCr skin detection
             const Y = 0.299 * r + 0.587 * g + 0.114 * b;
             const Cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
             const Cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
@@ -172,14 +170,12 @@ export default function InterviewPage() {
       }
     }
 
-    // BFS to find connected skin regions
     const visited = new Set<number>();
     let faceCount = 0;
 
     for (let i = 0; i < skinGrid.length; i++) {
       if (!skinGrid[i] || visited.has(i)) continue;
 
-      // BFS
       const queue = [i];
       visited.add(i);
       const cells: number[] = [];
@@ -209,9 +205,10 @@ export default function InterviewPage() {
           ) {
             const ny = Math.floor(n / GRID_W);
             const nx = n % GRID_W;
-            const dy = Math.abs(ny - cy);
-            const dx = Math.abs(nx - cx);
-            if (dx <= 1 && dy <= 1) {
+            if (
+              Math.abs(ny - cy) <= 1 &&
+              Math.abs(nx - cx) <= 1
+            ) {
               visited.add(n);
               queue.push(n);
             }
@@ -221,12 +218,6 @@ export default function InterviewPage() {
 
       const rW = maxX - minX + 1;
       const rH = maxY - minY + 1;
-
-      // Valid face region:
-      // - At least 6 cells
-      // - Width and height >= 2 cells
-      // - Aspect ratio between 0.4 and 2.5 (face-like)
-      // - Not the whole frame (< 85% width)
       const aspect = rH > 0 ? rW / rH : 0;
 
       if (
@@ -242,7 +233,7 @@ export default function InterviewPage() {
     return faceCount;
   }, []);
 
-  // ── Proctoring — only face count, NO phone detection ─────────────
+  // ── Proctoring ────────────────────────────────────────────────────
   const startProctoring = useCallback(() => {
     if (proctoringIntervalRef.current) return;
 
@@ -254,17 +245,14 @@ export default function InterviewPage() {
       if (faceCount > 1) {
         consecutivePersonRef.current += 1;
 
-        // Need 3 consecutive detections to confirm
         if (consecutivePersonRef.current >= 3) {
           if (!multiPersonWarningGivenRef.current) {
-            // First time — WARNING only
             multiPersonWarningGivenRef.current = true;
             consecutivePersonRef.current = 0;
             setProctoringWarning(
-              "⚠️ Another person detected in camera! Please ensure only you are visible."
+              "⚠️ Another person detected! Only you should be visible."
             );
           } else if (!multiPersonTimerRef.current) {
-            // Second time — start countdown
             multiPersonCountdownRef.current = 10;
             setMultiPersonCountdown(10);
             setProctoringWarning(null);
@@ -272,21 +260,18 @@ export default function InterviewPage() {
             multiPersonTimerRef.current = setInterval(() => {
               multiPersonCountdownRef.current -= 1;
               setMultiPersonCountdown(multiPersonCountdownRef.current);
-
               if (multiPersonCountdownRef.current <= 0) {
                 clearInterval(multiPersonTimerRef.current!);
                 multiPersonTimerRef.current = null;
                 stopInterview(
-                  "Interview stopped: Another person was detected in camera again."
+                  "Interview stopped: Another person detected again."
                 );
               }
             }, 1000);
           }
         }
       } else {
-        // Alone — reset
         consecutivePersonRef.current = 0;
-
         if (multiPersonTimerRef.current) {
           clearInterval(multiPersonTimerRef.current);
           multiPersonTimerRef.current = null;
@@ -294,7 +279,6 @@ export default function InterviewPage() {
           multiPersonWarningGivenRef.current = false;
           setProctoringWarning(null);
         } else if (proctoringWarning) {
-          // Clear warning after 5 sec if person left
           setTimeout(() => setProctoringWarning(null), 5000);
         }
       }
@@ -361,7 +345,7 @@ export default function InterviewPage() {
         );
       } else if (tabSwitchCountRef.current >= 2) {
         stopInterview(
-          "Interview stopped: You switched tabs 2 times. This is not allowed."
+          "Interview stopped: You switched tabs 2 times."
         );
       }
     };
@@ -489,7 +473,7 @@ export default function InterviewPage() {
 
       {/* Tab switch warning */}
       {tabSwitchWarning && !isStopped && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 py-3 flex items-center justify-center gap-3">
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 py-3 flex items-center justify-center gap-3 z-40 sticky top-16">
           <AlertTriangle className="w-5 h-5 text-yellow-400 animate-pulse shrink-0" />
           <p className="text-yellow-300 text-sm font-bold">
             ⚠️ Warning ({tabSwitchCount}/2): Tab switch detected!
@@ -500,7 +484,7 @@ export default function InterviewPage() {
 
       {/* Stopped banner */}
       {isStopped && (
-        <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-4 flex items-center justify-center gap-3 flex-wrap">
+        <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-4 flex items-center justify-center gap-3 flex-wrap z-40">
           <XCircle className="w-5 h-5 text-red-400 shrink-0" />
           <p className="text-red-400 text-sm font-medium text-center">
             {stopReason}
@@ -516,7 +500,7 @@ export default function InterviewPage() {
 
       {/* Multi person countdown */}
       {multiPersonCountdown !== null && !isStopped && (
-        <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-3 flex items-center justify-center gap-3">
+        <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-3 flex items-center justify-center gap-3 z-40">
           <AlertTriangle className="w-5 h-5 text-red-400 animate-pulse" />
           <p className="text-red-300 text-sm font-bold">
             🚨 Another person detected again! Interview stops in{" "}
@@ -527,7 +511,7 @@ export default function InterviewPage() {
 
       {/* Proctoring warning */}
       {proctoringWarning && !isStopped && multiPersonCountdown === null && (
-        <div className="bg-orange-500/10 border-b border-orange-500/20 px-6 py-2 flex items-center justify-center gap-2">
+        <div className="bg-orange-500/10 border-b border-orange-500/20 px-6 py-2 flex items-center justify-center gap-2 z-40">
           <ShieldAlert className="w-4 h-4 text-orange-400" />
           <p className="text-orange-400 text-sm font-medium">
             {proctoringWarning}
@@ -537,16 +521,16 @@ export default function InterviewPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-2">
+        <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-2 z-40">
           <p className="text-red-400 text-sm text-center">⚠️ {error}</p>
         </div>
       )}
 
-      {/* Body */}
+      {/* Body — chat takes full width minus camera panel */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Chat column */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* ✅ Chat column — right margin reserves space for fixed camera */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 mr-56">
 
           <ChatWindow
             messages={messages}
@@ -633,13 +617,16 @@ export default function InterviewPage() {
           />
         </div>
 
-        {/* Camera panel */}
-        <div className="w-56 shrink-0 border-l border-slate-800 bg-slate-900 flex flex-col items-center py-4 px-3 gap-3">
-
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        {/* ✅ FIXED: Camera panel is now FIXED — does not scroll with chat */}
+        <div
+          className="fixed top-0 right-0 bottom-0 w-56 border-l border-slate-800 bg-slate-900 flex flex-col items-center px-3 gap-3 overflow-y-auto z-40"
+          style={{ paddingTop: "72px" }}
+        >
+          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider pt-2">
             🎥 Live Camera
           </p>
 
+          {/* Video */}
           <div
             className="relative w-full rounded-xl overflow-hidden border-2 border-slate-700 bg-slate-800"
             style={{ aspectRatio: "4/3" }}
