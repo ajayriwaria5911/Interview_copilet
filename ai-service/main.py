@@ -1,8 +1,9 @@
 # ai-service/main.py
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from fastapi import FastAPI  # type: ignore[reportMissingImports]
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore[reportMissingImports]
+from dotenv import load_dotenv  # type: ignore[reportMissingImports]
+import os
 
 load_dotenv()
 
@@ -25,7 +26,10 @@ app.add_middleware(
 )
 
 from routers import ats
+from routers import questions
+
 app.include_router(ats.router, prefix="/api")
+app.include_router(questions.router, prefix="/api")
 
 
 @app.get("/")
@@ -33,7 +37,13 @@ async def root():
     return {
         "message": "InterviewCopilot AI Service",
         "version": "1.0.0",
-        "status": "running"
+        "status": "running",
+        "endpoints": [
+            "/api/ats/analyze",
+            "/api/questions/generate",
+            "/api/questions/feedback",
+            "/api/questions/topics",
+        ]
     }
 
 

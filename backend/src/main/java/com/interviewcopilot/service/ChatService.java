@@ -1,5 +1,4 @@
 // backend/src/main/java/com/interviewcopilot/service/ChatService.java
-
 package com.interviewcopilot.service;
 
 import com.interviewcopilot.document.ChatMessage;
@@ -29,8 +28,10 @@ public class ChatService {
 
     // ── Dynamic questions by topic/role ──────────────────────────────
 
-    private static final Map<String, List<String>> TOPIC_QUESTIONS = new HashMap<>();
-    private static final Map<String, List<String>> BEHAVIORAL_QUESTIONS = new HashMap<>();
+    private static final Map<String, List<String>> TOPIC_QUESTIONS =
+            new HashMap<>();
+    private static final Map<String, List<String>> BEHAVIORAL_QUESTIONS =
+            new HashMap<>();
 
     static {
         // Java Spring Boot
@@ -173,6 +174,20 @@ public class ChatService {
             "How would you design a database schema for an e-commerce application?"
         ));
 
+        // Coding questions
+        TOPIC_QUESTIONS.put("coding", Arrays.asList(
+            "Write a function to reverse a string without using built-in methods.",
+            "Implement a binary search algorithm and explain its complexity.",
+            "Find all pairs in an array that sum to a target value.",
+            "Implement a stack that supports push, pop, and getMin in O(1).",
+            "Write a function to detect if a linked list has a cycle.",
+            "Implement merge sort and explain its time complexity.",
+            "Find the longest substring without repeating characters.",
+            "Implement a LRU Cache with get and put operations.",
+            "Write a function to validate balanced parentheses.",
+            "Find the kth largest element in an unsorted array."
+        ));
+
         // Behavioral questions by role
         BEHAVIORAL_QUESTIONS.put("backend developer", Arrays.asList(
             "Tell me about a challenging backend system you designed.",
@@ -213,6 +228,32 @@ public class ChatService {
             "Describe your experience with cloud deployment."
         ));
 
+        BEHAVIORAL_QUESTIONS.put("data scientist", Arrays.asList(
+            "Tell me about a machine learning model you built and deployed.",
+            "How do you handle imbalanced datasets?",
+            "Describe a time you communicated complex findings to non-technical stakeholders.",
+            "How do you validate your machine learning models?",
+            "Tell me about a time your model failed in production and how you fixed it.",
+            "How do you approach feature engineering?",
+            "Describe your experience with A/B testing.",
+            "How do you handle missing data in your datasets?",
+            "Tell me about your experience with big data technologies.",
+            "How do you stay updated with latest ML research?"
+        ));
+
+        BEHAVIORAL_QUESTIONS.put("devops engineer", Arrays.asList(
+            "Tell me about a CI/CD pipeline you built from scratch.",
+            "How do you handle a production outage at 3 AM?",
+            "Describe a time you improved deployment frequency significantly.",
+            "How do you approach infrastructure as code?",
+            "Tell me about your experience with container orchestration.",
+            "How do you ensure security in your DevOps practices?",
+            "Describe your monitoring and alerting strategy.",
+            "Tell me about a time you had to migrate a monolith to microservices.",
+            "How do you handle configuration management across environments?",
+            "Describe your disaster recovery planning experience."
+        ));
+
         BEHAVIORAL_QUESTIONS.put("default", Arrays.asList(
             "Tell me about yourself and your professional background.",
             "Describe your greatest professional achievement.",
@@ -225,22 +266,9 @@ public class ChatService {
             "Describe your experience working in an Agile environment.",
             "Where do you see yourself in 5 years?"
         ));
-
-        // Coding questions
-        TOPIC_QUESTIONS.put("coding", Arrays.asList(
-            "Write a function to reverse a string without using built-in methods.",
-            "Implement a binary search algorithm and explain its complexity.",
-            "Find all pairs in an array that sum to a target value.",
-            "Implement a stack that supports push, pop, and getMin in O(1).",
-            "Write a function to detect if a linked list has a cycle.",
-            "Implement merge sort and explain its time complexity.",
-            "Find the longest substring without repeating characters.",
-            "Implement a LRU Cache with get and put operations.",
-            "Write a function to validate balanced parentheses.",
-            "Find the kth largest element in an unsorted array."
-        ));
     }
 
+    // ── Send message ──────────────────────────────────────────────────
     public ChatMessageResponse sendMessage(
             ChatMessageRequest request, String email) {
 
@@ -249,7 +277,8 @@ public class ChatService {
 
         Interview interview = interviewRepository
                 .findById(request.getInterviewId())
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Interview not found"));
 
         if (!interview.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Access denied");
@@ -261,7 +290,8 @@ public class ChatService {
                 .userId(user.getId())
                 .role("user")
                 .content(request.getContent())
-                .messageType(request.getMessageType() != null ? request.getMessageType() : "answer")
+                .messageType(request.getMessageType() != null
+                        ? request.getMessageType() : "answer")
                 .questionIndex(request.getQuestionIndex())
                 .isQuestion(false)
                 .build();
@@ -287,16 +317,20 @@ public class ChatService {
                 .build();
 
         ChatMessage saved = chatMessageRepository.save(assistantMessage);
+        log.info("Message sent for interview: {}", request.getInterviewId());
         return mapToResponse(saved);
     }
 
-    public ChatMessageResponse getNextQuestion(Long interviewId, String email) {
+    // ── Get next question ─────────────────────────────────────────────
+    public ChatMessageResponse getNextQuestion(
+            Long interviewId, String email) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Interview not found"));
 
         if (!interview.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Access denied");
@@ -307,7 +341,7 @@ public class ChatService {
 
         int questionIndex = (int) messageCount;
 
-        // Always start with an introduction question
+        // ✅ Always introduction first
         String question;
         if (questionIndex == 0) {
             question = "Question 1: Please introduce yourself. " +
@@ -335,9 +369,12 @@ public class ChatService {
                 .build();
 
         ChatMessage saved = chatMessageRepository.save(questionMessage);
+        log.info("Question {} sent for interview: {}",
+                questionIndex, interviewId);
         return mapToResponse(saved);
     }
 
+    // ── Get question based on topic and role ──────────────────────────
     private String getQuestion(
             Interview.InterviewType type,
             String topic,
@@ -347,21 +384,27 @@ public class ChatService {
         List<String> questions;
 
         if (type == Interview.InterviewType.BEHAVIORAL) {
-            // Get behavioral questions based on job role
-            String roleKey = jobRole != null ? jobRole.toLowerCase() : "default";
+            String roleKey = jobRole != null
+                    ? jobRole.toLowerCase() : "default";
             questions = BEHAVIORAL_QUESTIONS.entrySet().stream()
                     .filter(e -> roleKey.contains(e.getKey()))
                     .findFirst()
                     .map(Map.Entry::getValue)
                     .orElse(BEHAVIORAL_QUESTIONS.get("default"));
+
         } else if (type == Interview.InterviewType.CODING) {
-            questions = TOPIC_QUESTIONS.getOrDefault("coding",
-                    TOPIC_QUESTIONS.get("data structures"));
+            questions = TOPIC_QUESTIONS.getOrDefault(
+                    "coding",
+                    TOPIC_QUESTIONS.get("data structures")
+            );
         } else {
-            // Technical — match by topic
-            String topicKey = topic != null ? topic.toLowerCase() : "";
+            // TECHNICAL — match by topic
+            String topicKey = topic != null
+                    ? topic.toLowerCase() : "";
             questions = TOPIC_QUESTIONS.entrySet().stream()
-                    .filter(e -> topicKey.contains(e.getKey()) || e.getKey().contains(topicKey))
+                    .filter(e ->
+                            topicKey.contains(e.getKey()) ||
+                            e.getKey().contains(topicKey))
                     .findFirst()
                     .map(Map.Entry::getValue)
                     .orElse(getDefaultTechnicalQuestions(jobRole));
@@ -371,24 +414,21 @@ public class ChatService {
             questions = getDefaultTechnicalQuestions(jobRole);
         }
 
-        // Since index 0 is now reserved for the introduction question,
-        // shift by 1 when pulling from the topic question bank so the
-        // introduction doesn't consume/skip the first real question.
-        int bankIndex = index - 1;
+        // Skip index 0 since it's always the introduction
+        // Adjust index by -1 for subsequent questions
+        int adjustedIndex = index - 1;
 
-        if (bankIndex < 0) {
-            bankIndex = 0;
-        }
-
-        if (bankIndex >= questions.size()) {
+        if (adjustedIndex < 0 || adjustedIndex >= questions.size()) {
             return "Thank you for completing all the questions! " +
                    "Your interview session is now complete. " +
                    "You can review your performance in the history section.";
         }
 
-        return "Question " + (index + 1) + ": " + questions.get(bankIndex);
+        return "Question " + (index + 1) + ": " +
+               questions.get(adjustedIndex);
     }
 
+    // ── Default questions fallback ────────────────────────────────────
     private List<String> getDefaultTechnicalQuestions(String jobRole) {
         return Arrays.asList(
             "Tell me about yourself and your technical background.",
@@ -404,6 +444,7 @@ public class ChatService {
         );
     }
 
+    // ── Generate feedback ─────────────────────────────────────────────
     private String generateFeedback(
             String answer,
             Interview.InterviewType type,
@@ -413,64 +454,93 @@ public class ChatService {
         if (answer == null || answer.trim().isEmpty() ||
                 answer.contains("Time's up")) {
             return "No answer was provided for this question. " +
-                   "Try to manage your time better and provide at least " +
-                   "a brief answer for each question.";
+                   "Try to manage your time better and provide " +
+                   "at least a brief answer for each question.";
         }
 
         int wordCount = answer.trim().split("\\s+").length;
 
         if (wordCount < 5) {
-            return "Your answer is too brief. Try to elaborate more with " +
-                   "specific examples and details relevant to " +
+            return "Your answer is too brief. Try to elaborate more " +
+                   "with specific examples and details relevant to " +
                    (jobRole != null ? jobRole + " role." : "the question.");
         }
 
         return switch (type) {
-            case TECHNICAL -> generateTechnicalFeedback(answer, jobRole, questionIndex);
-            case BEHAVIORAL -> generateBehavioralFeedback(answer, jobRole, questionIndex);
+            case TECHNICAL -> generateTechnicalFeedback(
+                    answer, jobRole, questionIndex);
+            case BEHAVIORAL -> generateBehavioralFeedback(
+                    answer, jobRole, questionIndex);
             case CODING -> generateCodingFeedback(answer, questionIndex);
         };
     }
 
-    private String generateTechnicalFeedback(String answer, String jobRole, Integer qi) {
+    private String generateTechnicalFeedback(
+            String answer, String jobRole, Integer qi) {
         String[] feedbacks = {
-            String.format("Good technical explanation! For a %s role, consider also mentioning real-world implementation examples.", jobRole != null ? jobRole : "developer"),
-            "Solid answer! Try to include performance implications and trade-offs in your next response.",
-            String.format("You've covered the basics well. As a %s, elaborate on how you've used this in production.", jobRole != null ? jobRole : "developer"),
-            "Good understanding demonstrated. Consider mentioning edge cases and error handling approaches.",
-            "Nice answer! Try to quantify your experience — mention specific projects or scale you've worked with."
+            String.format(
+                "Good technical explanation! For a %s role, consider " +
+                "also mentioning real-world implementation examples.",
+                jobRole != null ? jobRole : "developer"),
+            "Solid answer! Try to include performance implications " +
+            "and trade-offs in your next response.",
+            String.format(
+                "You've covered the basics well. As a %s, elaborate on " +
+                "how you've used this in production.",
+                jobRole != null ? jobRole : "developer"),
+            "Good understanding demonstrated. Consider mentioning " +
+            "edge cases and error handling approaches.",
+            "Nice answer! Try to quantify your experience — mention " +
+            "specific projects or scale you've worked with."
         };
         return feedbacks[(qi != null ? qi : 0) % feedbacks.length];
     }
 
-    private String generateBehavioralFeedback(String answer, String jobRole, Integer qi) {
+    private String generateBehavioralFeedback(
+            String answer, String jobRole, Integer qi) {
         String[] feedbacks = {
-            "Good use of the STAR method! Quantify the impact of your actions with specific metrics.",
-            String.format("Strong answer for a %s position. Emphasize your specific contribution to the team.", jobRole != null ? jobRole : "developer"),
-            "Good storytelling! Make sure to highlight what YOU did specifically, not just the team.",
-            "Excellent response! The outcome you described shows strong problem-solving skills.",
-            "Good answer! Next time, mention what you learned and how it changed your approach."
+            "Good use of the STAR method! Quantify the impact of " +
+            "your actions with specific metrics.",
+            String.format(
+                "Strong answer for a %s position. Emphasize your " +
+                "specific contribution to the team.",
+                jobRole != null ? jobRole : "developer"),
+            "Good storytelling! Make sure to highlight what YOU did " +
+            "specifically, not just the team.",
+            "Excellent response! The outcome you described shows " +
+            "strong problem-solving skills.",
+            "Good answer! Next time, mention what you learned and " +
+            "how it changed your approach."
         };
         return feedbacks[(qi != null ? qi : 0) % feedbacks.length];
     }
 
     private String generateCodingFeedback(String answer, Integer qi) {
         String[] feedbacks = {
-            "Good approach! Discuss the time and space complexity of your solution.",
-            "Your logic is correct. Consider edge cases like empty inputs or null values.",
-            "Nice solution! Think about whether there's a more optimized approach with better Big O.",
-            "Good thinking! Walk through your solution with a sample input to verify correctness.",
-            "Correct implementation! Consider using built-in data structures to simplify the code."
+            "Good approach! Discuss the time and space complexity " +
+            "of your solution.",
+            "Your logic is correct. Consider edge cases like empty " +
+            "inputs or null values.",
+            "Nice solution! Think about whether there's a more " +
+            "optimized approach with better Big O.",
+            "Good thinking! Walk through your solution with a sample " +
+            "input to verify correctness.",
+            "Correct implementation! Consider using built-in data " +
+            "structures to simplify the code."
         };
         return feedbacks[(qi != null ? qi : 0) % feedbacks.length];
     }
 
-    public ConversationDto getConversation(Long interviewId, String email) {
+    // ── Get conversation ──────────────────────────────────────────────
+    public ConversationDto getConversation(
+            Long interviewId, String email) {
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Interview not found"));
 
         if (!interview.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Access denied");
@@ -483,8 +553,10 @@ public class ChatService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
 
-        long userMessages = messages.stream().filter(m -> "user".equals(m.getRole())).count();
-        long assistantMessages = messages.stream().filter(m -> "assistant".equals(m.getRole())).count();
+        long userMessages = messages.stream()
+                .filter(m -> "user".equals(m.getRole())).count();
+        long assistantMessages = messages.stream()
+                .filter(m -> "assistant".equals(m.getRole())).count();
 
         return ConversationDto.builder()
                 .interviewId(interviewId)
@@ -498,12 +570,16 @@ public class ChatService {
                 .build();
     }
 
-    public List<ChatMessageResponse> getMessages(Long interviewId, String email) {
+    // ── Get messages ──────────────────────────────────────────────────
+    public List<ChatMessageResponse> getMessages(
+            Long interviewId, String email) {
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Interview not found"));
 
         if (!interview.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Access denied");
@@ -516,20 +592,25 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
+    // ── Clear conversation ────────────────────────────────────────────
     public void clearConversation(Long interviewId, String email) {
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Interview not found"));
 
         if (!interview.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Access denied");
         }
 
         chatMessageRepository.deleteByInterviewId(interviewId);
+        log.info("Conversation cleared for interview: {}", interviewId);
     }
 
+    // ── Map to response ───────────────────────────────────────────────
     private ChatMessageResponse mapToResponse(ChatMessage message) {
         return ChatMessageResponse.builder()
                 .id(message.getId())
